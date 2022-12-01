@@ -1,29 +1,45 @@
 # pi_motion_distance_alarm.py
 import RPi.GPIO as GPIO
 import time
+import mysql.connector
 
 # Declare GPIO Pins
 PIR = 4 #Physical pin: 7
 TRIG = 17 #Physical pin: 11
 ECHO = 27 #Physical pin: 13
-TIME_TRHRESHOLD = 10 # Measured in seconds
+TIME_TRHRESHOLD = 10 # Measured in seconds?
 RANGE_THRESHOLD = 375 # Measured in centimeters
 RANGE_TRIGGER = 50 # Measured in centimeters
+
 # Set up I/O declarations
 GPIO.setup(TRIG, GPIO.OUT)
 GPIO.setup(ECHO, GPIO.IN)
+GPIO.setup(PIR, GPIO.IN)
 
 # Set initial value to false (Not measuring anything)
 GPIO.output(TRIG, False)
 
 def triggerAlarm(type, dist):
     # send mesage to pub/sub
+    #import publisher.py script and run here? or copy contents?
     # Contents:
         # time, type(of trigger), reporting device, dist
     
     # send query to database
-
-
+    # Create connection object
+    mydb = mysql.connector.connect(
+        host="PUBLIC-IP-HERE", 
+        user="root",
+        password="PASSWORD-HERE",
+        database="DB_ALARMS"
+    )
+    mycursor = mydb.cursor()
+    time_now = 'time' #ntp time
+    if type == 'Time-based':
+        query = "INSERT INTO prox_alarms (time_now, min_distance) VALUES (%s, %s)"
+        val = (time_now, dist)
+        mycursor.execute(query, val)
+    elif type == 'T'
 
 # Logic to support Ultrasonic sensor
 
@@ -47,13 +63,13 @@ while True:
             time.sleep(0.00001)
             GPIO.output(TRIG, False)
 
+            # Math to handle trig-echo time related-distance calculations
             while GPIO.input(ECHO)==0:
                 pulse_start = time.time()
             while GPIO.input(ECHO)==1:
                 pulse_end = time.time()
             pulse_duration = pulse_end - pulse_start
             distance = pulse_duration * 17150
-
             distance = round(distance+1.15, 2)
   
             if distance<=RANGE_THRESHOLD and TIME_TRHRESHOLD<=time_counter:
