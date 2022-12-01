@@ -19,7 +19,7 @@ GPIO.setup(PIR, GPIO.IN)
 # Set initial value to false (Not measuring anything)
 GPIO.output(TRIG, False)
 
-def triggerAlarm(type, dist):
+def triggerAlarm(type, dist, time):
     # send mesage to pub/sub
     #import publisher.py script and run here? or copy contents?
     # Contents:
@@ -35,18 +35,21 @@ def triggerAlarm(type, dist):
     )
     mycursor = mydb.cursor()
     time_now = 'time' #ntp time
-    if type == 'Time-based':
-        query = "INSERT INTO prox_alarms (time_now, min_distance) VALUES (%s, %s)"
+    if type == 'Time-evoked':
+        query = "INSERT INTO time_alarms (time_now, min_distance) VALUES (%s, %s)"
         val = (time_now, dist)
         mycursor.execute(query, val)
-    elif type == 'T'
+    elif type == 'Proximity':
+        query = "INSERT INTO prox_alarms (time_now, time_to_trigger) VALUES (%s, %s)"
+        val = (time_now, dist)
+        mycursor.execute(query, val)
 
 # Logic to support Ultrasonic sensor
 
 while True:
     # Wait for the motion detector to activate before attempting to find an object
-    pir.wait_for_motion()
-    #Action taken:
+    # pir.wait_for_motion()
+    # Action taken:
     # contents of reference for ultrasonic sensor
     # do this until target is out of range
 
