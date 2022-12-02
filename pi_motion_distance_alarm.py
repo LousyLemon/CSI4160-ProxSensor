@@ -58,9 +58,9 @@ def triggerAlarm(type, dist, time_to_trigger):
     # 3 - Prepare message for Pub/Sub according to [1]
     # 4 - Send message to Pub/Sub topic
     # 5 - Connect to DB, execute query, return full table contents
-    # 5 - 
+    # 5 -
     # send mesage to pub/sub
-    
+
     #mycursor = mydb.cursor()
     topic_path = 'projects/cheon-csi4160-f22/tpoics/pi-events'
     timestamp = datetime.now()
@@ -96,7 +96,7 @@ def triggerAlarm(type, dist, time_to_trigger):
         print("Sending details to Pub/Sub")
         future = publisher.publish(topic_path, data)
         print(f'Published message id {future.result()}')
-    
+
         with pool.connect() as db_conn:
             db_conn.execute(insert_stmt, time_now=timestamp, time_to_trigger="10s")
             db_conn.execute("SELECT * FROM time_alarms").fetchall()
@@ -114,10 +114,10 @@ while True:
     # do this until target is out of range
 
     # if the range < 200cm then we want to start a counter
-    # count until time THRESHOLD 
+    # count until time THRESHOLD
     # if threshold is met / hit, then we triggerAlarm()
     # Create db entry -> prepared statement
-    # Send message to pub/sub topic 
+    # Send message to pub/sub topic
     # if the range < 50 cm then we want to trigger the alarm right away
     # Range threshold
     try:
@@ -138,7 +138,7 @@ while True:
                 print("distance:",distance,"cm")
                 triggerAlarm('Time-evoked', distance)
                 i=1
-          
+
             if distance<=RANGE_TRIGGER:
                 triggerAlarm('Proximity', distance)
                 i=0
