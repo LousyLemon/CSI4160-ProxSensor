@@ -28,9 +28,9 @@ def triggerAlarm(type, dist, time):
     # send query to database
     # Create connection object
     mydb = mysql.connector.connect(
-        host="PUBLIC-IP-HERE", 
+        host="34.72.243.58", 
         user="root",
-        password="PASSWORD-HERE",
+        password="@Q+tN({aun8\"e60>",
         database="DB_ALARMS"
     )
     mycursor = mydb.cursor()
