@@ -22,12 +22,12 @@ GPIO.setup(PIR, GPIO.IN)
 # Set initial value to false (Not measuring anything)
 GPIO.output(TRIG, False)
 
-
-# initialize connector object
+# Initialize connector object
 connector = Connector()
-
+# Declare Credential Path
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'csi4160-pisub.json'
 
+# Create Pub/Sub object and set topic path
 publisher = pubsub_v1.PublisherClient()
 topic_path = 'projects/cheon-csi4160-f22/topics/pi-events'
 
@@ -59,7 +59,6 @@ def triggerAlarm(type, dist, time_to_trigger):
 	# 4 - Send message to Pub/Sub topic
 	# 5 - Connect to DB, execute query, return full table contents
 
-	#mycursor = mydb.cursor()
 	topic_path = 'projects/cheon-csi4160-f22/tpoics/pi-events'
 	timestamp = datetime.now()
 
@@ -79,14 +78,16 @@ def triggerAlarm(type, dist, time_to_trigger):
 		future = publisher.publish(topic_path, data)
 		print(f'Published message ID: {future.result()}')
 
-		# [5] Connect to instance, insert collected data
-		with pool.connect() as db_conn:
-			db_conn.execute(insert_stmt, time_now=timestamp, min_distance="230")
-			result = db_conn.execute("SELECT * FROM prox_alarms").fetchall()
-		# result = db_conn.execute("SELECT * FROM time_alarms").fetchall()
-			for row in result:
-				print(row)
+		if future.result() != None:
+			# [5] Connect to instance, insert collected data
+			with pool.connect() as db_conn:
+				db_conn.execute(insert_stmt, time_now=timestamp, min_distance="230")
+				result = db_conn.execute("SELECT * FROM prox_alarms").fetchall()
+				# result = db_conn.execute("SELECT * FROM time_alarms").fetchall()
+				for row in result:
+					print(row)
 
+	# [1] Determine alarm type
 	elif type == 'Proximity':
 		# [2] prepare proximity alarm query
 		insert_stmt =  sqlalchemy.text(
@@ -101,16 +102,16 @@ def triggerAlarm(type, dist, time_to_trigger):
 		future = publisher.publish(topic_path, data)
 		print(f'Published message ID: {future.result()}')
 
-		# [5] Connect to instance, insert collected data
-		with pool.connect() as db_conn:
-			db_conn.execute(insert_stmt, time_now=timestamp, time_to_trigger="10s")
-			db_conn.execute("SELECT * FROM time_alarms").fetchall()
-			# result = db_conn.execute("SELECT * FROM time_alarms").fetchall()
-			for row in result:
-				print(row)
+		if future.result() != None:
+			# [5] Connect to instance, insert collected data
+			with pool.connect() as db_conn:
+				db_conn.execute(insert_stmt, time_now=timestamp, time_to_trigger="10s")
+				db_conn.execute("SELECT * FROM time_alarms").fetchall()
+				# result = db_conn.execute("SELECT * FROM time_alarms").fetchall()
+				for row in result:
+					print(row)
 
 # Logic to support Ultrasonic sensor
-
 while True:
 	# Wait for the motion detector to activate before attempting to find an object
 	# pir.wait_for_motion()
@@ -126,43 +127,43 @@ while True:
 	# if the range < 50 cm then we want to trigger the alarm right away
 	# Range threshold
 	pir_signal=GPIO.input(PIR)
-	start_time = time.time()
-	try:
-		while pir_signal==1: # condition should be - while PIR == HIGH
-			print("Motion detected - Measuring")
-			# When the signal is detecting something in range and moving
-			GPIO.output(TRIG, True)
-			time.sleep(0.00001)
-			GPIO.output(TRIG, False)
-			
-			# Math to handle trig-echo time related-distance calculations
-			while GPIO.input(ECHO)==0:
-				pulse_start = time.time()
-			while GPIO.input(ECHO)==1:
-				pulse_end = time.time()
-			pulse_duration = pulse_end - pulse_start
-			distance = pulse_duration * 17150
-			distance = round(distance+1.15, 2)
-			print(f"Distance: {distance}")
-			#Track length (in time) the loop has executed for
-			end_time = time.time()
-			time_counter= end_time - start_time
-			print(f"Time counter: {time_counter}")
+	if pir_signal==1:
+		start_time = time.time() # start timer for time-based alarm
+		try:
+			while True: # while PIR == Detecting
+				print("Motion detected - Measuring")
+				# When the signal is detecting something in range and moving
+				GPIO.output(TRIG, True)
+				time.sleep(0.00001)
+				GPIO.output(TRIG, False)
+				
+				# Math to handle trig-echo time related-distance calculations
+				while GPIO.input(ECHO)==0:
+					pulse_start = time.time()
+				while GPIO.input(ECHO)==1:
+					pulse_end = time.time()
+				pulse_duration = pulse_end - pulse_start
+				distance = pulse_duration * 17150
+				distance = round(distance+1.15, 2)
+				print(f"Distance: {distance}")
+				#Track length (in time) the loop has executed for
+				end_time = time.time()
+				time_counter= end_time - start_time
+				print(f"Time counter: {time_counter}")
 
-			if distance<=OUTER_RANGE_THRESHOLD and TIME_TRHRESHOLD<=time_counter:
-				print("Distance:",distance,"cm")
-				triggerAlarm('Time-evoked', distance)
-				i=1
+				if distance<=OUTER_RANGE_THRESHOLD and TIME_TRHRESHOLD<=time_counter:
+					print("Distance:",distance,"cm")
+					triggerAlarm('Time-evoked', distance)
+					i=1
 
-			if distance<=RANGE_TRIGGER:
-				triggerAlarm('Proximity', distance)
-				i=0
-				time.sleep(2)
+				if distance<=RANGE_TRIGGER:
+					triggerAlarm('Proximity', distance)
+					i=0
+					time.sleep(2)
 
-	except KeyboardInterrupt:
-		GPIO.cleanup()
 
-	
-	pir.wait_for_no_motion()
-	red_led.off()
-	print("Motion Stopped")
+		except KeyboardInterrupt:
+			GPIO.cleanup()
+
+	if pir_signal==0:
+		print("Motion Stopped")
