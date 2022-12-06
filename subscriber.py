@@ -32,7 +32,7 @@ pool = sqlalchemy.create_engine(
 
 
 def prepare_query(type, time_now, content):
-    if type.lower == "proximity":
+    if type.lower() == "proximity":
         insert_stmt = sqlalchemy.Text(
             "INSERT INTO prox_alarms (time_now, min_distance) VALUES (:time_now, :min_distance)",
         )
@@ -42,7 +42,7 @@ def prepare_query(type, time_now, content):
             for row in result:
                 print(row)
 
-    elif type.lower == "time-evoked":
+    elif type.lower() == "time-evoked":
         insert_stmt = sqlalchemy.Text(
             "INSERT INTO time_alarms (time_now, time_to_trigger) VALUES (:time_now, :time_to_trigger)"
         )
