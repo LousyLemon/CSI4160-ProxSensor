@@ -4,6 +4,8 @@ from datetime import datetime
 import time, os, sqlalchemy, pymysql
 # Import GCP requirements
 from google.cloud import pubsub_v1
+
+
 from google.cloud.sql.connector import Connector
 
 
